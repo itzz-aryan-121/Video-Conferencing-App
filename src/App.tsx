@@ -18,6 +18,7 @@ import Meeting from "./pages/Meeting";
 import MyMeetings from "./pages/MyMeetings";
 import OneOnOneMeeting from "./pages/OneOnOneMeeting";
 import VideoConference from "./pages/VideoConference";
+import Footer from "./components/Footer";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="*" element={<Login />} />
           </Routes>
+          <Footer />
           <EuiGlobalToastList
             toasts={toasts}
             dismissToast={removeToast}
