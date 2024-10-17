@@ -59,7 +59,7 @@ export default function App() {
   };
 
   const location = useLocation();
-  const showFooter = !['/create1on1', '/videoconference'].includes(location.pathname);
+  const showFooter = !['/create1on1', '/videoconference','/meeting'].includes(location.pathname);
 
   return (
     <ThemeSelector>
