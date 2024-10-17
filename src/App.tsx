@@ -6,7 +6,7 @@ import {
 import { EuiThemeColorMode } from "@elastic/eui/src/services/theme";
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { useAppSelector } from "./app/hooks";
 import { setToasts } from "./app/slices/MeetingSlice";
 import ThemeSelector from "./components/ThemeSelector";
@@ -58,6 +58,9 @@ export default function App() {
     },
   };
 
+  const location = useLocation();
+  const showFooter = !['/create1on1', '/videoconference'].includes(location.pathname);
+
   return (
     <ThemeSelector>
       <EuiProvider colorMode={theme}>
@@ -73,7 +76,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="*" element={<Login />} />
           </Routes>
-          <Footer />
+         {showFooter && <Footer /> }
           <EuiGlobalToastList
             toasts={toasts}
             dismissToast={removeToast}
