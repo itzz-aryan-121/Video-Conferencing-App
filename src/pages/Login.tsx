@@ -1,4 +1,6 @@
 import React, { useState, ChangeEvent } from "react";
+import Swal from "sweetalert2" // Import SweetAlert2
+
 import { FaGooglePlusG } from "react-icons/fa";
 import {
   GoogleAuthProvider,
@@ -6,7 +8,6 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
-  User,
 } from "firebase/auth";
 import { firebaseAuth, firebaseDB, usersRef } from "../utils/FirebaseConfig";
 import { collection, query, where, addDoc, getDocs } from "firebase/firestore";
@@ -29,6 +30,8 @@ import {
 import animation from "../assets/animation.gif";
 import logo from "../assets/logo.png";
 
+ // Initialize SweetAlert2 with React support
+
 function Login() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -42,16 +45,41 @@ function Login() {
     if (currentUser) navigate("/");
   });
 
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(firebaseAuth, provider);
-    const { uid, displayName, email } = result.user;
+  const showNotification = (
+    icon: "success" | "error",
+    title: string
+  ) => {
+    Swal.fire({
+      toast: true, // Enable toast mode
+      position: "top-end", // Top-right corner
+      icon,
+      title,
+      showConfirmButton: false, // No OK button
+      timer: 2000, // Auto-dismiss after 2 seconds
+      timerProgressBar: true, // Show a progress bar
+      background: "#333", // Dark background
+      color: "#fff", // White text color
+      customClass: {
+        popup: "swal2-toast", // Custom styling (optional)
+      },
+    });
+  };
 
-    await handleUserInFirestore(uid, displayName ?? "Anonymous", email ?? "");
-    dispatch(
-      setUser({ uid, email: email ?? "", name: displayName ?? "Anonymous" })
-    );
-    navigate("/");
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(firebaseAuth, provider);
+      const { uid, displayName, email } = result.user;
+
+      await handleUserInFirestore(uid, displayName ?? "Anonymous", email ?? "");
+      dispatch(
+        setUser({ uid, email: email ?? "", name: displayName ?? "Anonymous" })
+      );
+      showNotification("success", "Logged in successfully!");
+      navigate("/");
+    } catch (error: any) {
+      showNotification("error", `Google Login Failed: ${error.message}`);
+    }
   };
 
   const handleEmailPasswordLogin = async () => {
@@ -68,9 +96,10 @@ function Login() {
           name: user.displayName ?? "User",
         })
       );
+      showNotification("success", "Logged in successfully!");
       navigate("/");
     } catch (error: any) {
-      alert(`Login failed: ${error.message}`);
+      showNotification("error", `Login failed: ${error.message}`);
     }
   };
 
@@ -85,9 +114,10 @@ function Login() {
       dispatch(
         setUser({ uid: user.uid, email: user.email ?? "", name: "New User" })
       );
+      showNotification("success", "Registered successfully!");
       navigate("/");
     } catch (error: any) {
-      alert(`Registration failed: ${error.message}`);
+      showNotification("error", `Registration failed: ${error.message}`);
     }
   };
 
@@ -171,8 +201,11 @@ function Login() {
                 </EuiButton>
                 <EuiSpacer size="l" />
                 <EuiButton onClick={handleGoogleLogin}>
-                  <FaGooglePlusG size={30} />
-                  {/* &nbsp; Login with Google */}
+                  <FaGooglePlusG
+                    size={30}
+                    className="google-icon"
+                    style={{ marginRight: "8px" }}
+                  />
                 </EuiButton>
               </EuiFlexItem>
             </EuiFlexGroup>

@@ -16,7 +16,7 @@ export default function Footer() {
     >
       <EuiFlexItem grow={false}>
         <EuiText color="subdued" size="s">
-          Made with 🤍 by Aryan
+          Made with 🤍 by Aryan & Ayush
         </EuiText>
       </EuiFlexItem>
     </EuiFlexGroup>
