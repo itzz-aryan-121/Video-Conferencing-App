@@ -1,4 +1,4 @@
-import { EuiFlexGroup, EuiForm, EuiSpacer, EuiText, EuiPanel } from "@elastic/eui";
+import { EuiForm, EuiSpacer, EuiText, EuiPanel } from "@elastic/eui";
 import { addDoc } from "firebase/firestore";
 import moment from "moment";
 import React, { useState } from "react";

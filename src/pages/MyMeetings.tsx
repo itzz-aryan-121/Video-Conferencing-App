@@ -8,7 +8,6 @@ import {
     EuiPanel,
     EuiText,
     EuiTitle,
-    EuiSpacer,
   } from "@elastic/eui";
   import { getDocs, query, where } from "firebase/firestore";
   import moment from "moment";
@@ -167,7 +166,7 @@ const MyMeetingsIcon = () => (
         render: (meetingId: string) => {
           return (
             <EuiCopy
-              textToCopy={`${process.env.REACT_APP_HOST}/join/${meetingId}`}
+              textToCopy={`${process.env.VITE_HOST || window.location.origin}/join/${meetingId}`}
             >
               {(copy: any) => (
                 <EuiButtonIcon

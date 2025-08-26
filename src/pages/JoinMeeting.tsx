@@ -7,9 +7,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import useToast from "../hooks/useToast";
 import { firebaseAuth, meetingsRef } from "../utils/FirebaseConfig";
 import { generateMeetingID } from "../utils/generateMeetingId";
-import MoodDetection from "../components/MoodDetection";
+
 import VoiceIndicator from "../components/VoiceIndicator";
-import { EuiFlexGroup, EuiFlexItem, EuiSwitch, EuiText, EuiPanel, EuiButton, EuiSpacer } from "@elastic/eui";
+import { EuiFlexGroup, EuiFlexItem, EuiText, EuiPanel, EuiButton } from "@elastic/eui";
 
 // Custom SVG Icons
 const MeetingRoomIcon = () => (
@@ -50,21 +50,19 @@ export default function JoinMeeting() {
   const [createToast] = useToast();
   const [isAllowed, setIsAllowed] = useState(false);
   const [user, setUser] = useState<any>(undefined);
-  const [userLoaded, setUserLoaded] = useState(false);
-  const [isMoodDetectionEnabled, setIsMoodDetectionEnabled] = useState(true);
   const [isVoiceActive, setIsVoiceActive] = useState(false);
   const [meetingStarted, setMeetingStarted] = useState(false);
+  const [overlayHidden, setOverlayHidden] = useState(false);
 
   onAuthStateChanged(firebaseAuth, (currentUser) => {
     if (currentUser) {
       setUser(currentUser);
     }
-    setUserLoaded(true);
   });
 
   useEffect(() => {
     const getMeetingData = async () => {
-      if (params.id) {
+      if (params.id && user) { // Only run when user is loaded
         const firestoreQuery = query(
           meetingsRef,
           where("meetingId", "==", params.id)
@@ -72,14 +70,38 @@ export default function JoinMeeting() {
         const fetchedMeetings = await getDocs(firestoreQuery);
         if (fetchedMeetings.docs.length) {
           const meeting = fetchedMeetings.docs[0].data();
-          const isCreator = meeting.createdBy === user?.uid;
+          const isCreator = meeting.createdBy === user.uid;
+          
+          // Check meeting date first
+          const meetingDate = moment(meeting.meetingDate, "L");
+          const today = moment().startOf('day');
+          
+          if (meetingDate.isBefore(today)) {
+            navigate("/");
+            createToast({
+              title: "Meeting has ended",
+              type: "danger",
+            });
+            return;
+          }
+          
+          if (meetingDate.isAfter(today)) {
+            navigate("/");
+            createToast({
+              title: `Meeting is scheduled for ${meeting.meetingDate}`,
+              type: "warning",
+            });
+            return;
+          }
+          
+          // Now check permissions
           if (meeting.meetingType === "anyone-can-join") {
             setIsAllowed(true);
           } else if (isCreator) {
             setIsAllowed(true);
           } else {
             const index = meeting.invitedUsers.findIndex(
-              (invitedUser: string) => invitedUser === user?.uid
+              (invitedUser: string) => invitedUser === user.uid
             );
             if (index !== -1) {
               setIsAllowed(true);
@@ -132,46 +154,87 @@ export default function JoinMeeting() {
     }
   };
 
-  const handleMoodDetected = (mood: any, confidence: number) => {
-    console.log("Mood detected:", mood, "Confidence:", confidence);
-    // You can add more sophisticated mood handling here
-  };
+
 
   const myMeeting = async (element: any) => {
-    const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-      parseInt(process.env.ZEGOCLOUD_APP_ID as string),
-      process.env.ZEGOCLOUD_SERVER_SECRET as string,
-      params.id as string,
-      user?.uid ? user.uid : generateMeetingID(),
-      user?.displayName ? user.displayName : generateMeetingID()
-    );
-    const zp = ZegoUIKitPrebuilt.create(kitToken);
+    // Check if environment variables are configured
+    if (!process.env.VITE_ZEGOCLOUD_APP_ID || !process.env.VITE_ZEGOCLOUD_SERVER_SECRET) {
+      console.error("ZegoCloud credentials not configured!");
+      createToast({
+        title: "Configuration Error - Check .env file",
+        type: "danger",
+      });
+      return;
+    }
 
-    zp?.joinRoom({
-      container: element,
-      maxUsers: 50,
-      sharedLinks: [
-        {
-          name: "Personal link",
-          url: window.location.origin,
+    try {
+      const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+        parseInt(process.env.VITE_ZEGOCLOUD_APP_ID!),
+        process.env.VITE_ZEGOCLOUD_SERVER_SECRET as string,
+        params.id as string,
+        user?.uid ? user.uid : generateMeetingID(),
+        user?.displayName ? user.displayName : generateMeetingID()
+      );
+      
+      console.log("Generated kit token:", kitToken ? "Success" : "Failed");
+      
+      const zp = ZegoUIKitPrebuilt.create(kitToken);
+      
+      if (!zp) {
+        throw new Error("Failed to create ZegoUIKit instance");
+      }
+
+      zp?.joinRoom({
+        container: element,
+        maxUsers: 50,
+        sharedLinks: [
+          {
+            name: "Personal link",
+            url: window.location.origin,
+          },
+        ],
+        scenario: {
+          mode: ZegoUIKitPrebuilt.VideoConference,
         },
-      ],
-      scenario: {
-        mode: ZegoUIKitPrebuilt.VideoConference,
-      },
-      onJoinRoom: () => {
-        // Hide loading overlay when meeting starts
-        const loader = document.getElementById('meeting-loader');
-        if (loader) {
-          loader.style.opacity = '0';
-          setTimeout(() => {
-            loader.style.display = 'none';
-            setMeetingStarted(true);
-            detectVoiceActivity();
-          }, 500);
+        onJoinRoom: () => {
+          console.log("Successfully joined room");
+          // Hide loading overlay when meeting starts
+          const loader = document.getElementById('meeting-loader');
+          if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+              loader.style.display = 'none';
+              setMeetingStarted(true);
+              setOverlayHidden(true);
+              detectVoiceActivity();
+            }, 200);
+          }
+        },
+      });
+
+      // Fallback: Hide overlay after 10 seconds if callback doesn't fire
+      setTimeout(() => {
+        if (!overlayHidden) {
+          console.log("Fallback: Hiding overlay after timeout");
+          const loader = document.getElementById('meeting-loader');
+          if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+              loader.style.display = 'none';
+              setMeetingStarted(true);
+              setOverlayHidden(true);
+              detectVoiceActivity();
+            }, 500);
+          }
         }
-      },
-    });
+      }, 10000);
+    } catch (error) {
+      console.error("Error setting up meeting:", error);
+      createToast({
+        title: "Setup Error - Check configuration",
+        type: "danger",
+      });
+    }
   };
 
   return isAllowed ? (
@@ -233,6 +296,32 @@ export default function JoinMeeting() {
               Please wait while we connect you to the meeting room
             </p>
           </EuiText>
+          
+          {/* Manual override button */}
+          <div style={{ marginTop: "2rem" }}>
+            <EuiButton
+              size="s"
+              color="primary"
+              fill
+              onClick={() => {
+                const loader = document.getElementById('meeting-loader');
+                if (loader) {
+                  loader.style.opacity = '0';
+                  setTimeout(() => {
+                    loader.style.display = 'none';
+                    setMeetingStarted(true);
+                    setOverlayHidden(true);
+                    detectVoiceActivity();
+                  }, 500);
+                }
+              }}
+              style={{
+                borderRadius: "var(--radius-md)"
+              }}
+            >
+              Continue to Meeting
+            </EuiButton>
+          </div>
         </div>
       </div>
 
@@ -277,32 +366,7 @@ export default function JoinMeeting() {
               </EuiPanel>
             </EuiFlexItem>
 
-            <EuiFlexItem>
-              <EuiPanel
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  padding: "0.5rem"
-                }}
-              >
-                <EuiFlexGroup alignItems="center" gutterSize="s">
-                  <EuiFlexItem>
-                    <EuiText size="s" style={{ color: "var(--text-secondary)" }}>
-                      Mood Detection
-                    </EuiText>
-                  </EuiFlexItem>
-                  <EuiFlexItem grow={false}>
-                    <EuiSwitch
-                      showLabel={false}
-                      label="Mood Detection"
-                      checked={isMoodDetectionEnabled}
-                      onChange={(e) => setIsMoodDetectionEnabled(e.target.checked)}
-                      compressed
-                    />
-                  </EuiFlexItem>
-                </EuiFlexGroup>
-              </EuiPanel>
-            </EuiFlexItem>
+
 
             <EuiFlexItem>
               <EuiButton
@@ -342,13 +406,7 @@ export default function JoinMeeting() {
         }}
       />
 
-      {/* Mood Detection Component */}
-      {isMoodDetectionEnabled && (
-        <MoodDetection
-          isEnabled={isMoodDetectionEnabled}
-          onMoodDetected={handleMoodDetected}
-        />
-      )}
+
     </div>
   ) : (
     <div
