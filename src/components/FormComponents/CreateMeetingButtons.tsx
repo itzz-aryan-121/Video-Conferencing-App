@@ -12,19 +12,46 @@ function CreateMeetingButtons({
   closeFlyout?: () => {};
 }) {
   const navigate = useNavigate();
+  
   return (
-    <EuiFlexGroup>
+    <EuiFlexGroup gutterSize="m">
       <EuiFlexItem grow={false}>
         <EuiButton
           color="danger"
           onClick={() => (isEdit ? closeFlyout!() : navigate("/"))}
           fill
+          style={{
+            background: "var(--error-color)",
+            border: "none",
+            borderRadius: "var(--radius-lg)",
+            padding: "0.75rem 2rem",
+            fontSize: "1rem",
+            fontWeight: "600",
+            transition: "all 0.3s ease",
+            boxShadow: "var(--shadow-sm)"
+          }}
+          className="cancel-button"
         >
           Cancel
         </EuiButton>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
-        <EuiButton type="submit" onClick={createMeeting} fill>
+        <EuiButton 
+          type="submit" 
+          onClick={createMeeting} 
+          fill
+          style={{
+            background: "var(--primary-gradient)",
+            border: "none",
+            borderRadius: "var(--radius-lg)",
+            padding: "0.75rem 2rem",
+            fontSize: "1rem",
+            fontWeight: "600",
+            transition: "all 0.3s ease",
+            boxShadow: "var(--shadow-sm)"
+          }}
+          className="create-button"
+        >
           {isEdit ? "Edit Meeting" : "Create Meeting"}
         </EuiButton>
       </EuiFlexItem>

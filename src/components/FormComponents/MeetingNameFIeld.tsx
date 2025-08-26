@@ -1,6 +1,5 @@
-import { EuiFieldText, EuiFormRow } from "@elastic/eui";
+import { EuiFieldText, EuiFormRow, EuiText } from "@elastic/eui";
 import React from "react";
-import ThemeSelector from "../ThemeSelector";
 
 function MeetingNameFIeld({
   label,
@@ -18,16 +17,35 @@ function MeetingNameFIeld({
   setMeetingName: React.Dispatch<React.SetStateAction<string>>;
 }) {
   return (
-    <ThemeSelector>
-      <EuiFormRow label={label} isInvalid={isInvalid} error={error}>
-        <EuiFieldText
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => setMeetingName(e.target.value)}
-          isInvalid={isInvalid}
-        />
-      </EuiFormRow>
-    </ThemeSelector>
+    <EuiFormRow 
+      label={
+        <EuiText style={{ color: "var(--text-primary)", fontWeight: "500" }}>
+          {label}
+        </EuiText>
+      } 
+      isInvalid={isInvalid} 
+      error={error}
+      style={{ marginBottom: "1rem" }}
+    >
+      <EuiFieldText
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => setMeetingName(e.target.value)}
+        isInvalid={isInvalid}
+        style={{
+          background: "var(--glass-bg)",
+          border: "var(--glass-border)",
+          borderRadius: "var(--radius-lg)",
+          color: "var(--text-primary)",
+          fontSize: "1rem",
+          padding: "0.75rem 1rem",
+          transition: "all 0.3s ease",
+          backdropFilter: "blur(10px)",
+          boxShadow: "var(--shadow-sm)"
+        }}
+        className="meeting-name-field"
+      />
+    </EuiFormRow>
   );
 }
 

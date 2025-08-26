@@ -8,21 +8,16 @@ interface authInitialState {
         email: string;
         name: string;
       };
-  isDarkTheme: boolean;
 }
 
 const initialState: authInitialState = {
   userInfo: undefined,
-  isDarkTheme: false,
 };
 
 export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    changeTheme: (state, action) => {
-      state.isDarkTheme = action.payload.isDarkTheme;
-    },
     setUser: (
       state,
       action: PayloadAction<{
@@ -36,4 +31,4 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setUser, changeTheme } = authSlice.actions;
+export const { setUser } = authSlice.actions;
