@@ -166,7 +166,7 @@ const MyMeetingsIcon = () => (
         render: (meetingId: string) => {
           return (
             <EuiCopy
-              textToCopy={`${process.env.VITE_HOST || window.location.origin}/join/${meetingId}`}
+              textToCopy={`${process.env.REACT_APP_HOST || window.location.origin}/join/${meetingId}`}
             >
               {(copy: any) => (
                 <EuiButtonIcon

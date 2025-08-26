@@ -158,7 +158,7 @@ export default function JoinMeeting() {
 
   const myMeeting = async (element: any) => {
     // Check if environment variables are configured
-    if (!process.env.VITE_ZEGOCLOUD_APP_ID || !process.env.VITE_ZEGOCLOUD_SERVER_SECRET) {
+    if (!process.env.REACT_APP_ZEGOCLOUD_APP_ID || !process.env.REACT_APP_ZEGOCLOUD_SERVER_SECRET) {
       console.error("ZegoCloud credentials not configured!");
       createToast({
         title: "Configuration Error - Check .env file",
@@ -169,8 +169,8 @@ export default function JoinMeeting() {
 
     try {
       const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-        parseInt(process.env.VITE_ZEGOCLOUD_APP_ID!),
-        process.env.VITE_ZEGOCLOUD_SERVER_SECRET as string,
+        parseInt(process.env.REACT_APP_ZEGOCLOUD_APP_ID!),
+        process.env.REACT_APP_ZEGOCLOUD_SERVER_SECRET as string,
         params.id as string,
         user?.uid ? user.uid : generateMeetingID(),
         user?.displayName ? user.displayName : generateMeetingID()
